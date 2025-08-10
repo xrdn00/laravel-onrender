@@ -19,12 +19,14 @@ if [ ! -d "storage/framework" ]; then
            storage/framework/cache \
            storage/framework/sessions \
            storage/framework/testing \
-           storage/framework/views
+           storage/framework/views \
+           storage/logs
 fi
 
 # Permissions for storage and cache
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R ug+rwx storage bootstrap/cache 2>/dev/null || true
+touch storage/logs/laravel.log 2>/dev/null || true
 
 # Generate APP_KEY if missing
 if [ ! -f "/var/www/html/storage/app_key_set" ]; then

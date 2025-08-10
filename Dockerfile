@@ -41,10 +41,12 @@ RUN set -eux; \
         libzip-dev \
         libpng-dev \
         libjpeg62-turbo-dev \
-        libfreetype6-dev; \
+        libfreetype6-dev \
+        libpq-dev; \
     docker-php-ext-configure gd --with-freetype --with-jpeg; \
     docker-php-ext-install -j"$(nproc)" \
         pdo_mysql \
+        pdo_pgsql \
         bcmath \
         exif \
         gd \
