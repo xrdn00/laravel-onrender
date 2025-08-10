@@ -12,6 +12,15 @@ as $$
   select nullif(current_setting('app.user_id', true), '')::bigint
 $$;
 
+-- Helper to fetch the login email (used only during unauthenticated login)
+create or replace function app.current_login_email()
+returns text
+language sql
+stable
+as $$
+  select nullif(current_setting('app.login_email', true), '')::text
+$$;
+
 -- Move users table to laravel schema if it exists in public
 alter table if exists public.users set schema laravel;
 
@@ -69,6 +78,24 @@ begin
     on laravel.users
     for insert
     with check (true);
+  end if;
+
+  -- Allow selecting a user row for login using the attempted email (unauthenticated)
+  if not exists (
+    select 1 from pg_policy p
+    join pg_class c ON p.polrelid = c.oid
+    join pg_namespace n ON c.relnamespace = n.oid
+    where n.nspname = 'laravel'
+      and c.relname = 'users'
+      and p.polname = 'select_login_by_email'
+  ) then
+    create policy select_login_by_email
+    on laravel.users
+    for select
+    using (
+      coalesce(current_setting('app.user_id', true), '') = ''
+      and lower(email) = lower(coalesce(current_setting('app.login_email', true), ''))
+    );
   end if;
   end if;
 end

@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust Render's reverse proxy so HTTPS scheme is honored via X-Forwarded-* headers
         $middleware->trustProxies(at: '*');
 
+        $middleware->alias([
+            'pg.login_email' => \App\Http\Middleware\SetPgLoginEmail::class,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\SetPgUserContext::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
