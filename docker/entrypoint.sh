@@ -34,6 +34,9 @@ if [ ! -f "/var/www/html/storage/app_key_set" ]; then
   touch /var/www/html/storage/app_key_set || true
 fi
 
+# Run Laravel package discovery (Composer scripts were skipped during build)
+php artisan package:discover --ansi --no-interaction || true
+
 # Cache config and routes for performance (ignore failures if any)
 php artisan config:cache --no-interaction || true
 php artisan route:cache --no-interaction || true

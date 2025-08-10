@@ -21,7 +21,8 @@ RUN composer install \
     --prefer-dist \
     --no-progress \
     --no-interaction \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --no-scripts
 
 
 # --- Final runtime image (Apache + PHP) ---
