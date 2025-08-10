@@ -73,3 +73,30 @@ begin
   end if;
 end
 $$;
+
+-- Enable and force RLS on every table in the `laravel` schema except `users`
+do $$
+declare r record;
+begin
+  for r in
+    select n.nspname as schema_name, c.relname as table_name
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'laravel'
+      and c.relkind in ('r','p') -- ordinary and partitioned tables
+      and c.relname not in (
+        'users',
+        'migrations',
+        'jobs',
+        'job_batches',
+        'cache',
+        'sessions',
+        'password_reset_tokens',
+        'personal_access_tokens'
+      )
+  loop
+    execute format('alter table %I.%I enable row level security', r.schema_name, r.table_name);
+    execute format('alter table %I.%I force row level security', r.schema_name, r.table_name);
+  end loop;
+end
+$$;
