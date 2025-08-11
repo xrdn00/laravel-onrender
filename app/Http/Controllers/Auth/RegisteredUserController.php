@@ -8,6 +8,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
@@ -36,11 +37,16 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        // Ensure registration satisfies RLS: app.current_user_id() must be NULL/empty
+        $user = DB::transaction(function () use ($request) {
+            DB::statement("select set_config('app.user_id', '', false)");
+
+            return User::create([
+                'name' => $request->name,
+                'email' => strtolower($request->email),
+                'password' => Hash::make($request->password),
+            ]);
+        });
 
         event(new Registered($user));
 

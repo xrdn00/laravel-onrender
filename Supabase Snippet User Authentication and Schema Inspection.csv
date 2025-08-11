@@ -1,0 +1,5 @@
+schemaname,tablename,policyname,permissive,roles,cmd,qual,with_check
+laravel,users,insert_user_registration,PERMISSIVE,"{app_user,authenticated}",INSERT,null,((app.current_user_id() IS NULL) AND (length((email)::text) > 0) AND (length((password)::text) > 0))
+laravel,users,select_login_by_email,PERMISSIVE,"{app_user,authenticated}",SELECT,"((COALESCE(current_setting('app.user_id'::text, true), ''::text) = ''::text) AND (lower((email)::text) = lower(COALESCE(current_setting('app.login_email'::text, true), ''::text))))",null
+laravel,users,select_own_user,PERMISSIVE,"{app_user,authenticated}",SELECT,(id = app.current_user_id()),null
+laravel,users,update_own_user,PERMISSIVE,"{app_user,authenticated}",UPDATE,(id = app.current_user_id()),(id = app.current_user_id())

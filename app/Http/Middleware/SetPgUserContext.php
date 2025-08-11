@@ -15,13 +15,19 @@ class SetPgUserContext
         $userId = Auth::id();
         $role = Auth::user()?->role ?? 'user';
 
-        // Set a per-connection GUC that our RLS policies read via app.current_user_id()
-        // Use set_config so it is scoped to this connection; reset to empty when unauthenticated.
-        $value = $userId ? (string) $userId : '';
-        DB::statement("select set_config('app.user_id', ?, false)", [$value]);
+        // Set session-scoped GUCs for the duration of this request, then clear them.
+        // Using session scope (is_local = false) ensures they persist across multiple
+        // DB statements within the same request even without an explicit transaction.
+        DB::statement("select set_config('app.user_id', ?, false)", [$userId ? (string) $userId : '']);
         DB::statement("select set_config('app.user_role', ?, false)", [$userId ? (string) $role : '']);
 
-        return $next($request);
+        try {
+            return $next($request);
+        } finally {
+            // Clear to avoid leaking context between requests in pooled connections
+            DB::statement("select set_config('app.user_id', '', false)");
+            DB::statement("select set_config('app.user_role', '', false)");
+        }
     }
 }
 

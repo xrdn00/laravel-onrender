@@ -32,11 +32,9 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        // Ensure RLS updates within this request succeed by setting user context GUCs
-        $userId = strval(Auth::id());
-        $role = Auth::user()?->role ?? 'user';
-        DB::statement("select set_config('app.user_id', ?, false)", [$userId]);
-        DB::statement("select set_config('app.user_role', ?, false)", [$role]);
+        // Set user GUCs after successful auth; middleware will also clear them after response
+        DB::statement("select set_config('app.user_id', ?, false)", [strval(Auth::id())]);
+        DB::statement("select set_config('app.user_role', ?, false)", [Auth::user()?->role ?? 'user']);
 
         $request->session()->regenerate();
 

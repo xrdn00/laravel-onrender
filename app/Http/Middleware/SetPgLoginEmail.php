@@ -11,7 +11,7 @@ class SetPgLoginEmail
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $email = (string) $request->input('email', '');
+        $email = strtolower((string) $request->input('email', ''));
         DB::statement("select set_config('app.login_email', ?, false)", [$email]);
 
         try {
