@@ -89,42 +89,32 @@ BEGIN
         EXECUTE 'DROP POLICY IF EXISTS update_own_user ON laravel.users';
         EXECUTE 'DROP POLICY IF EXISTS insert_user_registration ON laravel.users';
         EXECUTE 'DROP POLICY IF EXISTS select_login_by_email ON laravel.users';
+        EXECUTE 'DROP POLICY IF EXISTS allow_user_registration ON laravel.users';
+        EXECUTE 'DROP POLICY IF EXISTS server_select ON laravel.users';
+        EXECUTE 'DROP POLICY IF EXISTS delete_own_user ON laravel.users';
 
-        -- Select own user policy
-        EXECUTE 'CREATE POLICY select_own_user 
-        ON laravel.users 
-        FOR SELECT 
-        TO authenticated 
-        USING (id = app.current_user_id())';
+        -- (Removed authenticated-only policies: select_own_user, update_own_user,
+        --  insert_user_registration, select_login_by_email)
 
-        -- Update own user policy
-        EXECUTE 'CREATE POLICY update_own_user 
-        ON laravel.users 
-        FOR UPDATE 
-        TO authenticated 
-        USING (id = app.current_user_id()) 
-        WITH CHECK (id = app.current_user_id())';
-
-        -- Flexible user insertion policy for new user registration
-        EXECUTE 'CREATE POLICY insert_user_registration 
+        -- Server role insert policy (unrestricted) and select policy for RETURNING
+        EXECUTE 'CREATE POLICY allow_user_registration 
         ON laravel.users 
         FOR INSERT 
-        TO authenticated 
-        WITH CHECK (
-            app.current_user_id() IS NULL 
-            AND length(email) > 0 
-            AND length(password) > 0
-        )';
+        TO app_user 
+        WITH CHECK (true)';
 
-        -- Login by email policy
-        EXECUTE 'CREATE POLICY select_login_by_email 
+        EXECUTE 'CREATE POLICY server_select 
         ON laravel.users 
         FOR SELECT 
-        TO authenticated 
-        USING (
-            coalesce(current_setting(''app.user_id'', true), '''') = ''''
-            AND lower(email) = lower(coalesce(current_setting(''app.login_email'', true), ''''))
-        )';
+        TO app_user 
+        USING (true)';
+
+        -- Allow users to delete their own row
+        EXECUTE 'CREATE POLICY delete_own_user 
+        ON laravel.users 
+        FOR DELETE 
+        TO app_user 
+        USING (id = app.current_user_id())';
     END IF;
 END $$;
 
